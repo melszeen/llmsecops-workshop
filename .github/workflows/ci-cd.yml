@@ -42,14 +42,7 @@ jobs:
 
       # 5. Run Trivy vulnerability scanner
       - name: Run Trivy vulnerability scanner
-        id: trivy-scan
-        uses: aquasecurity/trivy-action@master
-        continue-on-error: true
-        with:
-          image-ref: ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+        run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image ${{ env.IMAGE_NAME }}:latest
       
       # 6. Upload Trivy results to GitHub Security tab
       - name: Upload Trivy results to GitHub Security
