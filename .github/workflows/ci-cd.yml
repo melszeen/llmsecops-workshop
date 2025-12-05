@@ -68,8 +68,7 @@ jobs:
       # 7. Push Docker image to Docker Hub
       - name: Push Docker image
         run: |
-          docker tag ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest \
-                     ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker tag ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           docker push ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
           docker push ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
@@ -89,8 +88,7 @@ jobs:
       # 10. Update deployment image
       - name: Update Kubernetes deployment
         run: |
-          kubectl set image deployment/my-app \
-            fastapi-app=${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} --record
+          kubectl set image deployment/my-app fastapi-app=${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} --record
           kubectl rollout status deployment/my-app
 
       # 11. Verify deployment
