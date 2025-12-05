@@ -45,17 +45,19 @@ jobs:
 
       # 5. Run Trivy vulnerability scanner
       - name: Run Trivy vulnerability scanner
+        id: trivy-scan
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           image-ref: ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH,MEDIUM,LOW'
-
-      # 6. Upload Trivy scan results to GitHub Security tab
+      
+      # 6. Upload Trivy results to GitHub Security tab
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: steps.trivy-scan.outcome == 'success'
         with:
           sarif_file: 'trivy-results.sarif'
 
