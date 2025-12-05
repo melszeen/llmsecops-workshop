@@ -18,76 +18,82 @@ env:
 
 jobs:
   build-scan-deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted   # Runs only on your self-hosted runner
     
     steps:
       # 1. Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Set up Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # 3. Login to Docker Hub
+      # 2. Login to Docker Hub (must happen before building)
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
+          username: ${{ env.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 4. Build Docker image
+      # 3. Build Docker image
       - name: Build Docker image
-        run: docker build -t ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest .
+        run: |
+          docker build -t ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest .
 
-      # 5. Run Trivy vulnerability scanner
-      - name: Run Trivy vulnerability scanner
-        run: docker run --rm aquasec/trivy:latest image ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-      
-      # 6. Upload Trivy results to GitHub Security tab
+      # 4. Run Trivy vulnerability scanner (Docker image scan)
+      - name: Run Trivy Docker image scan
+        id: trivy-scan
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          image-ref: ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+
+      # 5. Upload Trivy results to GitHub Security tab
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: steps.trivy-scan.outcome == 'success'
         with:
           sarif_file: 'trivy-results.sarif'
 
-      # 7. Print Trivy scan summary
-      - name: Run Trivy (filesystem scan)
+      # 6. Optional: Print Trivy scan summary in console (filesystem scan)
+      - name: Run Trivy filesystem scan
         uses: aquasecurity/trivy-action@master
         continue-on-error: true
         with:
           scan-type: fs
           scan-ref: .
-          format: 'sarif'
-          output: 'trivy-results.sarif'
+          format: 'table'
           severity: 'CRITICAL,HIGH,MEDIUM,LOW'
 
-      # 8. Push Docker image to Docker Hub
+      # 7. Push Docker image to Docker Hub
       - name: Push Docker image
         run: |
-          docker tag ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          docker tag ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest \
+                     ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           docker push ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-      # 9. Set up kubectl
+      # 8. Set up kubectl
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4
         with:
           version: 'latest'
 
-      # 10. Configure kubectl for local cluster (requires self-hosted runner)
+      # 9. Configure kubectl for local cluster (self-hosted runner)
       - name: Configure kubectl
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
           chmod 600 $HOME/.kube/config
 
-      # 11. Update deployment image
+      # 10. Update deployment image
       - name: Update Kubernetes deployment
         run: |
-          kubectl set image deployment/my-app fastapi-app=${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} --record
+          kubectl set image deployment/my-app \
+            fastapi-app=${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} --record
           kubectl rollout status deployment/my-app
 
-      # 12. Verify deployment
+      # 11. Verify deployment
       - name: Verify deployment
         run: |
           kubectl get pods -l app=my-app
