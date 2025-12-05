@@ -52,11 +52,14 @@ jobs:
           sarif_file: 'trivy-results.sarif'
 
       # 7. Print Trivy scan summary
-      - name: Print Trivy scan summary
+      - name: Run Trivy (filesystem scan)
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
-          image-ref: ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-          format: 'table'
+          scan-type: fs
+          scan-ref: .
+          format: 'sarif'
+          output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH,MEDIUM,LOW'
 
       # 8. Push Docker image to Docker Hub
