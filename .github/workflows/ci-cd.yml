@@ -9,7 +9,7 @@ on:
       - main
 
 env:
-  DOCKER_USERNAME: secrets.DOCKER_USERNAME
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   IMAGE_NAME: fastapi-app
 
 jobs:
