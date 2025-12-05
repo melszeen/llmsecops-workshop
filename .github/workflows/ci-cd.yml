@@ -38,12 +38,12 @@ jobs:
           docker build -t ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest .
 
       # 4. Run Trivy vulnerability scanner (Docker image scan)
-      - name: Run Trivy Docker image scan
-        id: trivy-scan
+      - name: Run Trivy filesystem scan
         uses: aquasecurity/trivy-action@master
         continue-on-error: true
         with:
-          image-ref: ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          scan-type: fs
+          scan-ref: .
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH,MEDIUM,LOW'
