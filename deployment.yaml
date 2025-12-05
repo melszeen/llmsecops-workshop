@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gpt-huggingface
+  name: my-app
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: gpt-hf-pod
+      app: my-app
   template:
     metadata:
       labels:
-        app: gpt-hf-pod
+        app: my-app
     spec:
       containers:
-      - name: gptcontainer
-        image: darryl1975/fastapi-app:v1amd64
+      - name: fastapi-app
+        image: fastapi-app:latest
         ports:
         - containerPort: 8000
