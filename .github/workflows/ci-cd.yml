@@ -82,9 +82,14 @@ jobs:
       # 9. Configure kubectl for local cluster (self-hosted runner)
       - name: Configure kubectl
         run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
-          chmod 600 $HOME/.kube/config
+          $kubeDir = "$HOME\.kube"
+          if (-Not (Test-Path -Path $kubeDir)) {
+              New-Item -ItemType Directory -Path $kubeDir
+          }
+          
+          # Write the kubeconfig secret to file
+          $env:KUBECONFIG_SECRET = "${{ secrets.KUBECONFIG }}"
+          Set-Content -Path "$HOME\.kube\config" -Value $env:KUBECONFIG_SECRET -NoNewline
 
       # 10. Update deployment image
       - name: Update Kubernetes deployment
