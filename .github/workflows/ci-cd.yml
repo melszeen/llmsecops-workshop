@@ -65,7 +65,7 @@ jobs:
       # 8. Push Docker image to Docker Hub
       - name: Push Docker image
         run: |
-          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          docker tag ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
           docker push ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
 
       # 9. Set up kubectl
